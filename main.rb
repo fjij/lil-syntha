@@ -143,8 +143,8 @@ define :choose_subrhythm do |beats|
       [2*beat],
       [1.5*beat, 1*beat],
       [0.5*beat, 1*beat, 0.5*beat],
-      [0.5*beat, 1.5*beat],
-      [(2.0/3.0)*beat, (2.0/3.0)*beat, (2.0/3.0)*beat]
+      [0.5*beat, 1.5*beat]
+      [0.5*beat, 0.5*beat, 1*beat]
     ])
   end
   if beats == 4
@@ -349,7 +349,7 @@ define :play_melody do |pattern_play, synth, lyrical, follow_chords|
     if follow_chords == true
       c = ch_current
     end
-		if pattern[i][0] >= 0
+		if pattern_play[i][0] >= 0
 	    if lyrical == true
 	      play ch_scales[c][pattern_play[i][0]], amp: vol_melody, attack: 0, sustain: pattern_play[i][1], release: 0
 	    else
