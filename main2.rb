@@ -1,8 +1,8 @@
 # Hack the North 2019
-# load_buffer "~/github/music-htn-2019/main.rb"
+# run_file "~/github/music-htn-2019/main.rb"
 # note: Sample pack not included
 
-use_random_seed 1939
+#use_random_seed 1939
 
 s_808 = "~/Samples/808s"
 s_clap = "~/Samples/Claps"
@@ -17,6 +17,9 @@ n_hihat = rand_i(10)
 n_kick = rand_i(10)
 n_openhat = rand_i(8)
 n_snare = rand_i(14)
+
+useful_synths =
+[:blade, :bnoise, :chipbass, :chiplead, :dpulse, :dsaw, :dtri, :fm, :pretty_bell, :growl, :hollow, :hoover, :piano, :pluck, :prophet, :pulse, :saw, :sine, :supersaw, :tb303, :tech_saws, :tri, :zawa]
 
 sample s_808, n_808, amp: 0
 sample s_clap, n_clap, amp: 0
@@ -74,6 +77,9 @@ ch_chords = []
 ch_chord_type = []
 ch_scales = []
 ch_durations = []
+
+ch_broken = choose([true, false])
+ch_broken = true
 
 ch_count.times do
   note = choose_note
@@ -241,70 +247,40 @@ define :pattern_add_rests do |pattern|
 	end
 end
 
-# main pattern
-
-m_pattern = []
-
-t_scale = choose([1, 2, 4])
-p_a = generate_pattern(t_scale)
-p_a_copy = pattern_deep_copy(p_a)
-p_b = mutate_pattern(p_a_copy, t_scale)
-
-if t_scale == 1
-  m_pattern = choose([
-   p_a + p_b + p_a + p_b,
-   p_a + p_a + p_a + p_b
-  ])
+define :full_pattern do
+	pattern = []
+	t_scale = choose([1, 2, 4])
+	p_a = generate_pattern(t_scale)
+	p_a_copy = pattern_deep_copy(p_a)
+	p_b = mutate_pattern(p_a_copy, t_scale)
+	if t_scale == 1
+	  pattern = choose([
+	   p_a + p_b + p_a + p_b,
+	   p_a + p_a + p_a + p_b
+	  ])
+	end
+	if t_scale == 2
+	  pattern = choose([
+	   p_a + p_a,
+	   p_a + p_b
+	  ])
+	end
+	if t_scale == 4
+	  pattern = choose([p_a, p_b])
+	end
+	return pattern
 end
 
-if t_scale == 2
-  m_pattern = choose([
-   p_a + p_a,
-   p_a + p_b
-  ])
+m_pattern = full_pattern
+v_pattern = full_pattern
 
-end
-
-if t_scale == 4
-  m_pattern = choose([p_a, p_b])
-end
-
-# verse
-
-v_pattern = []
-
-t_scale = choose([1, 2, 4])
-pv_a = generate_pattern(t_scale)
-pv_a_copy = pattern_deep_copy(pv_a)
-pv_b = mutate_pattern(pv_a_copy, t_scale)
-
-if t_scale == 1
-  v_pattern = choose([
-   pv_a + pv_b + pv_a + pv_b,
-   pv_a + pv_a + pv_b + pv_a,
-   pv_a + pv_a + pv_a + pv_b
-  ])
-end
-
-if t_scale == 2
-  v_pattern = choose([
-   pv_a + pv_a,
-   pv_a + pv_b
-  ])
-
-end
-
-if t_scale == 4
-  v_pattern = choose([pv_a, pv_b])
-end
-
-m_synth = choose([:piano, :blade, :fm, :sine, :prophet])
-v_synth = choose([:piano, :blade, :fm, :sine, :prophet])
+m_synth = choose(useful_synths)
+v_synth = choose(useful_synths)
 
 m_lyrical = choose([true, false])
 v_lyrical = !m_lyrical
 
-ch_synth = choose([:blade, :sine, :saw, :fm, :growl])
+ch_synth = choose(useful_synths)
 
 
 # Playing Instruments
@@ -366,23 +342,23 @@ end
 
 vol_melody = 1.0
 
-define :play_melody do |pattern, synth, lyrical, follow_chords|
+define :play_melody do |pattern_play, synth, lyrical, follow_chords|
   # Duration: 32 beats
   use_synth synth
   c = 0
   i = 0
-  pattern.length.times do
+  (pattern_play.length).times do
     if follow_chords == true
       c = ch_current
     end
-		if pattern[i][0] >= 0
+		if pattern_play[i][0] >= 0
 	    if lyrical == true
-	      play ch_scales[c][pattern[i][0]], amp: vol_melody, attack: 0, sustain: pattern[i][1], release: 0
+	      play ch_scales[c][pattern_play[i][0]], amp: vol_melody, attack: 0, sustain: pattern_play[i][1], release: 0
 	    else
-	      play ch_scales[c][pattern[i][0]], amp: vol_melody, attack: 0
+	      play ch_scales[c][pattern_play[i][0]], amp: vol_melody, attack: 0
 	    end
 		end
-    sleep pattern[i][1]
+    sleep pattern_play[i][1]
     i = i + 1
   end
 end
@@ -392,8 +368,14 @@ vol_chords = 1.0
 define :play_chord_piece do |current_chord|
   # Duration: 8-16 beats
   use_synth ch_synth
-  play ch_chords[current_chord], amp: 0.5*vol_chords, attack: 0, sustain: ch_durations[current_chord], release: 0
-  sleep ch_durations[current_chord]
+	if ch_broken
+		(ch_durations[current_chord]/(beat*4)).times do
+	  	play play_pattern_timed ch_chords[current_chord] + [ch_chords[1]], 1*beat, amp: 0.7*vol_chords
+		end
+	else
+		play ch_chords[current_chord], amp: 0.5*vol_chords, attack: 0, sustain: ch_durations[current_chord]
+	  sleep ch_durations[current_chord]
+	end
 end
 
 vol_808 = 1.0
@@ -404,70 +386,78 @@ define :play_808 do |current_chord|
   sleep ch_durations[current_chord]
 end
 
-
-
 # Test Play Song
+song = [
+	[1, 1, 0, 0, 1, 1, 0, 0], #main
+	[0, 0, 1, 1, 0, 0, 0, 0], #verse
+	[0, 1, 1, 1, 1, 1, 1, 1], #beat (open + hihat)
+	[0, 1, 1, 1, 0, 0, 1, 0], #808s
+	[1, 1, 1, 0, 1, 1, 1, 0] #chords
+]
 
-use_transpose tp - 12
+use_transpose tp + choose([-12, 0])
 
+x = 0
 ch_current = 0
-
-in_thread do
-  loop do
-    # 32 beat counter
+loop do
+	in_thread do
+    # chord counter
     ch_current = 0
     ch_count.times do
       sleep ch_durations[ch_current]
       ch_current = ch_current + 1
     end
-  end
-end
+	end
 
-in_thread do
-  loop do
-    2.times do
-      play_melody(m_pattern, m_synth, m_lyrical, false)
-    end
-    2.times do
-      play_melody(v_pattern, v_synth, v_lyrical, false)
-    end
-  end
-end
+	if song[0][x] == 1
+		in_thread do
+	      play_melody(m_pattern, m_synth, m_lyrical, false)
+		end
+	end
 
-in_thread do
-  loop do
-    play_chord_piece(ch_current)
-  end
-end
+	if song[1][x] == 1
+		in_thread do
+	      play_melody(v_pattern, v_synth, v_lyrical, false)
+		end
+	end
 
-in_thread do
-  loop do
-    4.times do
-      play_beat1
-    end
-  end
-end
+	if song[4][x] == 1
+		in_thread do
+		  ch_count.times do
+				use_transpose tp - 24
+		    play_chord_piece(ch_current)
+		  end
+		end
+	end
 
-sleep 32*beat
+	if song[3][x] == 1
+		in_thread do
+		  ch_count.times do
+		    play_808(ch_current)
+		  end
+		end
+	end
 
-in_thread do
-  loop do
-    64.times do
-      play_hihat
-    end
-  end
-end
+	if song[2][x] == 1
+		in_thread do
+	    4.times do
+	      play_beat1
+	    end
+		end
 
-in_thread do
-  4.times do
-    loop do
-      play_openhat
-    end
-  end
-end
+		in_thread do
+	    64.times do
+	      play_hihat
+	    end
+		end
 
-in_thread do
-  loop do
-    play_808(ch_current)
-  end
+		in_thread do
+		  4.times do
+	      play_openhat
+		  end
+		end
+	end
+
+	sleep beat*32
+	x = x + 1
 end
