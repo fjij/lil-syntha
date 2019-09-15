@@ -386,11 +386,11 @@ end
 
 # Test Play Song
 song = [
-	[1, 1, 0, 0, 1, 1, 0, 0], #main
-	[0, 0, 1, 1, 0, 0, 0, 0], #verse
-	[0, 1, 1, 1, 1, 1, 1, 1], #beat (open + hihat)
-	[0, 1, 1, 1, 0, 0, 1, 0], #808s
-	[1, 1, 1, 0, 1, 1, 1, 0] #chords
+	[1, 1, 0, 0, 1, 1, 0, 0].ring, #main
+	[0, 0, 1, 1, 0, 0, 0, 0].ring, #verse
+	[0, 1, 1, 1, 1, 1, 1, 1].ring, #beat (open + hihat)
+	[0, 1, 1, 1, 0, 0, 1, 0].ring, #808s
+	[1, 1, 1, 0, 1, 1, 1, 0].ring #chords
 ]
 
 use_transpose tp + choose([-12, 0])
