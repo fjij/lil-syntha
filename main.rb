@@ -143,7 +143,7 @@ define :choose_subrhythm do |beats|
       [2*beat],
       [1.5*beat, 1*beat],
       [0.5*beat, 1*beat, 0.5*beat],
-      [0.5*beat, 1.5*beat]
+      [0.5*beat, 1.5*beat],
       [0.5*beat, 0.5*beat, 1*beat]
     ])
   end
