@@ -1,5 +1,9 @@
 # Hack the North 2019
+#lil syntha
 # note: Sample pack not included
+use_random_seed 6992345654344567456765445678908765
+mode = 1
+melody_boost = 0
 
 s_808 = "~/Samples/808s"
 s_clap = "~/Samples/Claps"
@@ -15,8 +19,9 @@ n_kick = rand_i(10)
 n_openhat = rand_i(8)
 n_snare = rand_i(14)
 
+
 useful_synths =
-[:blade, :bnoise, :chipbass, :chiplead, :dpulse, :dsaw, :dtri, :fm, :pretty_bell, :growl, :hollow, :hoover, :piano, :pluck, :prophet, :pulse, :saw, :sine, :supersaw, :tb303, :tech_saws, :tri, :zawa]
+[:blade, :chipbass, :chiplead, :fm, :pretty_bell, :hollow, :piano, :pluck, :prophet, :sine, :tri, :zawa]
 
 # Load samples
 sample s_808, n_808, amp: 0
@@ -32,7 +37,10 @@ sleep 0.5
 tp = rrand_i(-18, 0) #transpose
 
 bpm = rrand(120, 170)
+bpm = 240
 beat = 60.0/bpm
+
+beat_id = choose([0, 1])
 
 # test
 tp_808 = [-2, 0, 0, 0, 0, 0, 1, 0]
@@ -40,7 +48,7 @@ tp_808 = [-2, 0, 0, 0, 0, 0, 1, 0]
 # Chord Progression
 
 define :choose_note do
-  return choose([:C, :F, :G, :A])
+  return choose([:C, :D, :E, :F, :G, :A, :B])
 end
 
 define :get_sample_transpose do |note|
@@ -77,7 +85,6 @@ ch_scales = []
 ch_durations = []
 
 ch_broken = choose([true, false])
-ch_broken = true
 
 ch_count.times do
   note = choose_note
@@ -176,7 +183,7 @@ define :generate_pattern do |t_scale|
   i = 0
   srp.length.times do
     sr = choose_subrhythm(srp[i])
-    2.times do
+    mode.times do
       j = 0
       sr.length.times do
         pattern << [n, sr[j]*t_scale]
@@ -246,7 +253,6 @@ define :pattern_add_rests do |pattern|
 end
 
 define :full_pattern do
-	pattern = []
 	t_scale = choose([1, 2, 4])
 	p_a = generate_pattern(t_scale)
 	p_a_copy = pattern_deep_copy(p_a)
@@ -271,6 +277,7 @@ end
 
 m_pattern = full_pattern
 v_pattern = full_pattern
+
 
 m_synth = choose(useful_synths)
 v_synth = choose(useful_synths)
@@ -338,9 +345,12 @@ define :play_openhat do
   sleep 7*beat
 end
 
-vol_melody = 1.0
+vol_melody = 0.65
 
 define :play_melody do |pattern_play, synth, lyrical, follow_chords|
+	if melody_boost > 0
+		use_transpose tp + melody_boost
+	end
   # Duration: 32 beats
   use_synth synth
   c = 0
@@ -349,7 +359,7 @@ define :play_melody do |pattern_play, synth, lyrical, follow_chords|
     if follow_chords == true
       c = ch_current
     end
-		if pattern_play[i][0] >= 0
+		if defined? pattern_play and pattern_play[i][0] >= 0
 	    if lyrical == true
 	      play ch_scales[c][pattern_play[i][0]], amp: vol_melody, attack: 0, sustain: pattern_play[i][1], release: 0
 	    else
@@ -368,7 +378,7 @@ define :play_chord_piece do |current_chord|
   use_synth ch_synth
 	if ch_broken
 		(ch_durations[current_chord]/(beat*4)).times do
-	  	play play_pattern_timed ch_chords[current_chord] + [ch_chords[1]], 1*beat, amp: 0.7*vol_chords
+	  	play play_pattern_timed ch_chords[current_chord] + [ch_chords[1]], 1*beat, amp: 1.0*vol_chords
 		end
 	else
 		play ch_chords[current_chord], amp: 0.5*vol_chords, attack: 0, sustain: ch_durations[current_chord]
@@ -380,7 +390,7 @@ vol_808 = 1.0
 
 define :play_808 do |current_chord|
   # Duration: 8-16 beats
-  sample s_808, n_808, rpitch: ch_sample_transpose[current_chord] + tp_808[n_808] + tp, amp: 6*vol_808
+  sample s_808, n_808, rpitch: ch_sample_transpose[current_chord] + tp_808[n_808] + tp, amp: 4*vol_808
   sleep ch_durations[current_chord]
 end
 
@@ -439,7 +449,11 @@ loop do
 	if song[2][x] == 1
 		in_thread do
 	    4.times do
-	      play_beat1
+				if beat_id == 0
+					play_beat1
+				else
+		      play_beat2
+				end
 	    end
 		end
 
